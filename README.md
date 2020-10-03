@@ -1,1 +1,1 @@
-# Fullstack-GraphQL
+# Fullstack - GraphQL
