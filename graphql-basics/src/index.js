@@ -2,7 +2,7 @@ import { GraphQLServer } from 'graphql-yoga';
 import { v4 as uuidv4 } from 'uuid';
 
 // Demo User Data
-const users = [
+let users = [
   {
     id: '1',
     name: 'Andrew',
@@ -21,7 +21,7 @@ const users = [
   },
 ];
 
-const posts = [
+let posts = [
   {
     id: '10',
     title: 'GraphQL 101',
@@ -45,7 +45,7 @@ const posts = [
   },
 ];
 
-const comments = [
+let comments = [
   {
     id: '102',
     text: 'This worked well for me. Thanks!',
@@ -81,6 +81,31 @@ const typeDefs = `
     me: User!
     post: Post!
     scalarString: String!
+  }
+
+  type Mutation {
+    createUser(data: createUserInput!): User!
+    createPost(data: createPostInput!): Post!
+    createComment(data: createCommentInput): Comment!
+  }
+
+  input createUserInput {
+    name: String!
+    email: String!
+    age: Int
+  }
+
+  input createPostInput {
+    title: String!
+    body: String!
+    published: Boolean
+    author: ID!
+  }
+
+  input createCommentInput {
+    text: String!
+    author: ID!
+    post: ID!
   }
 
   type User {
@@ -165,6 +190,67 @@ const resolvers = {
 
     scalarString() {
       return 'Hello World';
+    },
+  },
+
+  Mutation: {
+    createUser(parent, args, ctx, info) {
+      const emailTaken = users.some((user) => user.email === args.data.email);
+
+      if (emailTaken) {
+        throw new Error('Email taken!!!');
+      }
+
+      const user = {
+        id: uuidv4(),
+        ...args.data,
+      };
+
+      users = [...users, user];
+
+      return user;
+    },
+
+    createPost(parent, args, ctx, info) {
+      const userExist = users.some((user) => user.id === args.data.author);
+
+      if (!userExist) {
+        throw new Error('User not found!');
+      }
+
+      const post = {
+        id: uuidv4(),
+        ...args.data,
+      };
+
+      posts = [...posts, post];
+
+      return post;
+    },
+
+    createComment(parent, args, ctx, info) {
+      const userExist = users.some((user) => user.id === args.data.author);
+
+      if (!userExist) {
+        throw new Error('User not found!');
+      }
+
+      const postExistAndPublished = posts.some(
+        (post) => post.id === args.data.post && post.published === true
+      );
+
+      if (!postExistAndPublished) {
+        throw new Error('Post not found or not published');
+      }
+
+      const comment = {
+        id: uuidv4(),
+        ...args.data,
+      };
+
+      comments = [...comments, comment];
+
+      return comment;
     },
   },
 
